@@ -43,7 +43,7 @@
 
 <div id="player-list">
   <h3>Игроки онлайн / недавно активны</h3>
-  <!-- Список игроков будет здесь -->
+  Загрузка...
 </div>
 
 <input type="text" id="admin-user" placeholder="User ID">
@@ -53,7 +53,19 @@
 <div id="status"></div>
 
 <script>
-  // Твой Firebase config
+  const tg = window.Telegram.WebApp || {};
+  tg.ready?.();
+  tg.expand?.();
+
+  const MY_ADMIN_ID = 1920427639;
+
+  // Проверка на админа (по Telegram ID)
+  if (tg.initDataUnsafe?.user?.id != MY_ADMIN_ID) {
+    document.body.innerHTML = '<h1>Доступ запрещён</h1>';
+    throw new Error("Не админ");
+  }
+
+  // Firebase config (твой)
   const firebaseConfig = {
     apiKey: "AIzaSyDaFDepdyQdw23ieJilXEfO_oVN0rIhHg",
     authDomain: "tggame-56b27.firebaseapp.com",
@@ -68,19 +80,16 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
 
-  const MY_ADMIN_ID = 1920427639;
+  console.log("Админ-панель загружена");
 
-  // Проверка, что это ты
-  if (tg.initDataUnsafe?.user?.id != MY_ADMIN_ID) {
-    document.body.innerHTML = '<h1>Доступ запрещён</h1>';
-    throw new Error("Не админ");
-  }
-
-  // Список игроков + онлайн-статус
   function loadPlayers() {
     db.ref('users').on('value', snap => {
       const list = document.getElementById('player-list');
       list.innerHTML = '<h3>Игроки онлайн / недавно активны</h3>';
+      if (!snap.exists()) {
+        list.innerHTML += '<p>Нет игроков в базе данных.</p>';
+        return;
+      }
       const now = Date.now();
       snap.forEach(child => {
         const data = child.val();
@@ -92,18 +101,19 @@
         div.innerHTML = `ID ${child.key}: ${data.balance || 0} чипов • ${status}`;
         list.appendChild(div);
       });
+    }, error => {
+      console.error("Ошибка Firebase:", error);
+      document.getElementById('player-list').innerHTML += '<p>Ошибка загрузки: ' + error.message + '</p>';
     });
   }
   loadPlayers();
 
-  // Изменение баланса
   document.getElementById('admin-change').addEventListener('click', () => {
     const uid = document.getElementById('admin-user').value.trim();
     const sum = parseInt(document.getElementById('admin-sum').value);
     if (uid && !isNaN(sum)) {
       db.ref(`users/${uid}/balance`).transaction(current => (current || 0) + sum);
       document.getElementById('status').textContent = `Баланс ${uid} изменён на ${sum}`;
-      loadPlayers();
     } else {
       alert('Введите ID и сумму');
     }
