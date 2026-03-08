@@ -59,13 +59,11 @@
 
   const MY_ADMIN_ID = 1920427639;
 
-  // Проверка на админа (по Telegram ID)
   if (tg.initDataUnsafe?.user?.id != MY_ADMIN_ID) {
     document.body.innerHTML = '<h1>Доступ запрещён</h1>';
-    throw new Error("Не админ");
+    return;
   }
 
-  // Firebase config (твой)
   const firebaseConfig = {
     apiKey: "AIzaSyDaFDepdyQdw23ieJilXEfO_oVN0rIhHg",
     authDomain: "tggame-56b27.firebaseapp.com",
@@ -80,13 +78,11 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
 
-  console.log("Админ-панель загружена");
-
   function loadPlayers() {
     db.ref('users').on('value', snap => {
       const list = document.getElementById('player-list');
       list.innerHTML = '<h3>Игроки онлайн / недавно активны</h3>';
-      if (!snap.exists()) {
+      if (!snap.exists() || snap.val() === null) {
         list.innerHTML += '<p>Нет игроков в базе данных.</p>';
         return;
       }
@@ -102,7 +98,6 @@
         list.appendChild(div);
       });
     }, error => {
-      console.error("Ошибка Firebase:", error);
       document.getElementById('player-list').innerHTML += '<p>Ошибка загрузки: ' + error.message + '</p>';
     });
   }
@@ -114,6 +109,7 @@
     if (uid && !isNaN(sum)) {
       db.ref(`users/${uid}/balance`).transaction(current => (current || 0) + sum);
       document.getElementById('status').textContent = `Баланс ${uid} изменён на ${sum}`;
+      loadPlayers();
     } else {
       alert('Введите ID и сумму');
     }
