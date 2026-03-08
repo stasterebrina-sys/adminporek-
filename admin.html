@@ -7,65 +7,44 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"></script>
   <style>
-    body {
-      margin: 0;
-      padding: 20px;
-      background: #111;
-      color: #fff;
-      font-family: Arial, sans-serif;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    #player-list {
-      margin: 20px 0;
-    }
+    body { margin:0; padding:20px; background:#111; color:#fff; font-family:Arial; }
+    h1 { text-align:center; margin-bottom:20px; }
+    #player-list { margin:20px 0; }
     .player-item {
-      background: #222;
-      padding: 12px;
-      margin: 10px 0;
-      border-radius: 6px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 1.1rem;
+      background:#222;
+      padding:12px;
+      margin:10px 0;
+      border-radius:8px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      font-size:1.1rem;
     }
-    .online {
-      color: #4caf50;
-      font-weight: bold;
-    }
-    .offline {
-      color: #757575;
-    }
+    .online { color:#34c759; font-weight:bold; }
+    .offline { color:#8e8e93; }
     input, button {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      box-sizing: border-box;
-      font-size: 1rem;
+      width:100%;
+      padding:12px;
+      margin:10px 0;
+      box-sizing:border-box;
+      font-size:1rem;
     }
     button {
-      background: #1976d2;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
+      background:#007aff;
+      color:white;
+      border:none;
+      border-radius:8px;
+      cursor:pointer;
     }
-    #status {
-      text-align: center;
-      color: #ffcc00;
-      margin-top: 20px;
-      font-size: 1.1rem;
-    }
+    #status { text-align:center; color:#ffcc00; margin-top:20px; }
   </style>
 </head>
 <body>
 
-<h1>Админ-панель (только для тебя)</h1>
+<h1>Админ-панель</h1>
 
 <div id="player-list">
-  <h3>Игроки (онлайн / недавно активны)</h3>
+  <h3>Игроки онлайн / недавно активны</h3>
   Загрузка...
 </div>
 
@@ -84,13 +63,11 @@
 
   const MY_ADMIN_ID = 1920427639;
 
-  // Проверка на админа (по Telegram ID)
   if (tg.initDataUnsafe?.user?.id != MY_ADMIN_ID) {
     document.body.innerHTML = '<h1>Доступ запрещён</h1>';
     return;
   }
 
-  // Firebase config (твой)
   const firebaseConfig = {
     apiKey: "AIzaSyDaFDepdyQdw23ieJilXEfO_oVN0rIhHg",
     authDomain: "tggame-56b27.firebaseapp.com",
@@ -105,14 +82,12 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
 
-  console.log("Админ-панель загружена");
-
   function loadPlayers() {
     db.ref('users').on('value', snap => {
       const list = document.getElementById('player-list');
       list.innerHTML = '<h3>Игроки онлайн / недавно активны</h3>';
       if (!snap.exists() || snap.val() === null) {
-        list.innerHTML += '<p>Нет игроков в базе данных. Запусти игру хотя бы раз.</p>';
+        list.innerHTML += '<p>Нет игроков в базе. Запусти игру хотя бы раз.</p>';
         return;
       }
       const now = Date.now();
