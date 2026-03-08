@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Panel</title>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"></script>
+  <style>
+    body { margin:0; padding:20px; background:#111; color:#fff; font-family:Arial; }
+    h1 { text-align:center; }
+    #player-list { margin:20px 0; }
+    .player-item {
+      background:#222;
+      padding:10px;
+      margin:10px 0;
+      border-radius:6px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+    .online { color:#4caf50; font-weight:bold; }
+    .offline { color:#757575; }
+    input, button {
+      width:100%;
+      padding:10px;
+      margin:10px 0;
+      box-sizing:border-box;
+    }
+    button {
+      background:#1976d2;
+      color:white;
+      border:none;
+      border-radius:6px;
+      cursor:pointer;
+    }
+    #status { text-align:center; color:#ffcc00; margin-top:20px; }
+  </style>
+</head>
+<body>
+
+<h1>Админ-панель (только для тебя)</h1>
+
+<div id="player-list">
+  <h3>Игроки онлайн / недавно активны</h3>
+  <!-- Список игроков будет здесь -->
+</div>
+
+<input type="text" id="admin-user" placeholder="User ID">
+<input type="number" id="admin-sum" placeholder="Сумма (+ добавить, - отнять)">
+<button id="admin-change">Применить</button>
+
+<div id="status"></div>
+
+<script>
+  // Твой Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyDaFDepdyQdw23ieJilXEfO_oVN0rIhHg",
+    authDomain: "tggame-56b27.firebaseapp.com",
+    databaseURL: "https://tggame-56b27-default-rtdb.firebaseio.com",
+    projectId: "tggame-56b27",
+    storageBucket: "tggame-56b27.appspot.com",
+    messagingSenderId: "937043251707",
+    appId: "1:937043251707:web:aad7b1b9408b6d07d5bb5e",
+    measurementId: "G-Q15Q0MS2L4"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  const MY_ADMIN_ID = 1920427639;
+
+  // Проверка, что это ты
+  if (tg.initDataUnsafe?.user?.id != MY_ADMIN_ID) {
+    document.body.innerHTML = '<h1>Доступ запрещён</h1>';
+    throw new Error("Не админ");
+  }
+
+  // Список игроков + онлайн-статус
+  function loadPlayers() {
+    db.ref('users').on('value', snap => {
+      const list = document.getElementById('player-list');
+      list.innerHTML = '<h3>Игроки онлайн / недавно активны</h3>';
+      const now = Date.now();
+      snap.forEach(child => {
+        const data = child.val();
+        const lastActive = data.lastActive || 0;
+        const minutesAgo = Math.round((now - lastActive) / 60000);
+        const status = minutesAgo < 5 ? '<span class="online">онлайн</span>' : `<span class="offline">${minutesAgo} мин назад</span>`;
+        const div = document.createElement('div');
+        div.className = 'player-item';
+        div.innerHTML = `ID ${child.key}: ${data.balance || 0} чипов • ${status}`;
+        list.appendChild(div);
+      });
+    });
+  }
+  loadPlayers();
+
+  // Изменение баланса
+  document.getElementById('admin-change').addEventListener('click', () => {
+    const uid = document.getElementById('admin-user').value.trim();
+    const sum = parseInt(document.getElementById('admin-sum').value);
+    if (uid && !isNaN(sum)) {
+      db.ref(`users/${uid}/balance`).transaction(current => (current || 0) + sum);
+      document.getElementById('status').textContent = `Баланс ${uid} изменён на ${sum}`;
+      loadPlayers();
+    } else {
+      alert('Введите ID и сумму');
+    }
+  });
+</script>
+</body>
+</html>
